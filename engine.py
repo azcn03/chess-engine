@@ -96,6 +96,47 @@ def evaluate_all_possible_moves(board, minMaxArg, maximumNumberOfMoves = 10):
     # TODO: Implement the method according to the above description
 
 
+    #We create a list to store, possible scores with the piece that achieved that score and the cell it has to move to (We use instances of the type Move, the class we are currently working in)
+    possible_scores = []
+
+    #iterate over all cells with the booleadn minMaxArg (same logic as before, if it's True = white, if it's False = black)
+    #and everytime you find a piece with the provided color
+    for piece_we_move in board.iterate_cells_with_pieces(minMaxArg.playAsWhite):
+        #you get all the moves that specific piece can make and store it in the list "all_possible_moves"
+        all_possible_moves = piece_we_move.get_valid_cells()
+        #before we start moving the piece we wanna move, we safe his location on the board, to be able to recover his old position after that
+        orginal_pos = piece_we_move.cell
+        
+        #now we iterate over all the possible moves that piece can make
+        for move in all_possible_moves:
+            #we first get the piece that is on the cell we wanna move to, to make sure after it's evaluated we can recover the boards old state
+            removed_piece = board.get_cell(move)
+            #now we move the piece we move to that position
+            board.set_cell(move, piece_we_move)
+            #now we evaluate the board for white (don't forget if we are black we want the lowest score)
+            score = board.evaluate()
+            #we create a new instance of the Move class
+            #for that we safe the piece we move, with the cell we moved it to and the resulting score of that action
+            temporarily_move = Move(piece_we_move, move, score)
+            #we add that object to the list we created at the begining
+            possible_scores.append(temporarily_move)
+            #we recover the old boards position by FIRST moving our piece back
+            board.set_cell(orginal_pos, piece_we_move)
+            #than set the cell back to it's original state
+            board.set_cell(move, removed_piece)
+
+
+    #    return possible_scores.sort(minMaxArg, lambda x : x.score)
+    #    TypeError: sort() takes no positional arguments
+
+
+    #https://stackoverflow.com/questions/403421/how-do-i-sort-a-list-of-objects-based-on-an-attribute-of-the-objects
+    sorted_list = sorted(possible_scores, reverse = minMaxArg.playAsWhite, key = lambda x : x.score)
+
+    return sorted_list[0:maximumNumberOfMoves]
+
+
+
 def minMax(board, minMaxArg):
     """
     **TODO**:
@@ -164,6 +205,48 @@ def minMax(board, minMaxArg):
     """
     # TODO: Implement the Mini-Max algorithm
 
+    #1. we get the 10 best moves we can do, with the current board configuration
+    top_moves_of_current_color = evaluate_all_possible_moves(board, minMaxArg)
+
+    #2. if there are no moves we can do (we lost), give the other color a big score 
+    if not top_moves_of_current_color:
+        #i use none and cell 0,0 because it doesn't matter what type of piece it is, the score is 100 000 in the favor of the winner
+        return Move(piece= None, cell=(0,0), score=-100000) if minMaxArg.playAsWhite else Move(piece= None, cell=(0,0), score=100000)
+    
+    #3. we check if we have reached the deepest level (1) of the min max algorithm (if not proceed)
+    if minMaxArg.depth > 1:
+        #we go through the top 10 moves with the according pieces one by one
+        for top_move in top_moves_of_current_color:
+            #get the piece that moves in that top_move we go through right now
+            piece = top_move.piece
+            #get the cell that piece want's to go to 
+            cell_we_wanna_go_to = top_move.cell
+
+            #save the current cell the piece is on
+            current_cell_of_piece = piece.cell
+            #save the piece we will go to for board recovery(none if cell is empty)
+            removed_piece = board.get_cell(cell_we_wanna_go_to)
+
+            #we move the piece to the position we wanna go to
+            board.set_cell(cell_we_wanna_go_to, piece)
+
+            #we get back the best move the enemy would do
+            enemys_best_possible_move = minMax_cached(board, minMaxArg=minMaxArg.next)
+
+            #we overwrite the current score we thought we will get, with the score we will get if the enemy plays his best game
+            top_move.score = enemys_best_possible_move.score
+            
+            #again first move our piece back, than place the old piece back on it's position
+            board.set_cell(current_cell_of_piece, piece)
+            board.set_cell(cell_we_wanna_go_to, removed_piece)
+
+    #https://stackoverflow.com/questions/403421/how-do-i-sort-a-list-of-objects-based-on-an-attribute-of-the-objects
+    #for every move we changed the score to the real score we would get, now we sort againg like in the function before
+    sorted_list = sorted(top_moves_of_current_color, reverse = minMaxArg.playAsWhite, key = lambda x : x.score)
+
+    #and finally return the best move
+    return sorted_list[0]
+
 
 def suggest_random_move(board):
     """
@@ -180,10 +263,35 @@ def suggest_random_move(board):
     """
     # TODO: Implement a valid random move
 
+    white_pieces_with_a_move = []
+
+    #we iterate over all the pieces of the board that are white
+    for piece in board.iterate_cells_with_pieces(True):
+        #now we have the piece with the method get_valid_cells, we get an empty list if the piece can't move so we use continue to skip to the next piece
+        #https://stackoverflow.com/questions/53513/how-do-i-check-if-a-list-is-empty
+        if not piece.get_valid_cells():
+            continue
+        #becaue this line will only be executed if we have a valid move, we only append pieces with valid moves
+        #now we add the pieces to a list
+        white_pieces_with_a_move.append(piece)
+
+    #because we know in that list we only have a piece if it also has a valid move we can just check if the list is empty
+    if not white_pieces_with_a_move:
+        return None
+    
+    #https://stackoverflow.com/questions/306400/how-can-i-randomly-select-choose-an-item-from-a-list-get-a-random-element
+    #here we select a random element of the list
+    random_piece = random.choice(white_pieces_with_a_move)
+    #here we get a random move of that chosen piece
+    random_move = random.choice(random_piece.get_valid_cells())
+
+    #now we have to return a Move() object
+    #have a look into the constructor 
+    return Move(random_piece, random_move, 0)
 
 
 def suggest_move(board):
-    """
+    """s
     Helper function to start the mini-max algorithm.
     """
     return minMax_cached(board, MinMaxArg())

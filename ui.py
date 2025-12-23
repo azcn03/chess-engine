@@ -227,5 +227,5 @@ def run_game(board, manual=False):
         # Flip the display
         pygame.display.flip()
 
-    # Quit Pygame
+    # Quit Pygame(azcn03)
     pygame.quit()
