@@ -122,7 +122,7 @@ class BoardBase:
         Calls is_king_check for board configurations not yet known. Caches the result for later look-up.
         """
         # Calculate hash and see if current position is in the cache
-        hash = self.hash() + "-w" if white else "-b"
+        hash = self.hash() + ("-w" if white else "-b")
         if hash in self.check_cache:
             return self.check_cache[hash]
 
@@ -181,9 +181,9 @@ class BoardBase:
         self.cells = [[None for _ in range(8)] for _ in range(8)]
 
         # Pawns
-        for col in range(8):
-            self.set_cell(np.array([1, col]), Pawn(self, True))
-            self.set_cell(np.array([6, col]), Pawn(self, False))
+        for fcol in range(8):
+            self.set_cell(np.array([1, fcol]), Pawn(self, True))
+            self.set_cell(np.array([6, fcol]), Pawn(self, False))
 
         # Rooks
         self.set_cell(np.array([0, 0]), Rook(self, True))
@@ -242,25 +242,24 @@ class Board(BoardBase):
         """
         # TODO: Implement
 
-        #Got my understanding of what Yield is from here: https://www.youtube.com/watch?v=xZJNa71Rvt4
-        #
-        # i know in the constructor of boardBase we create the cells with 
+        #im konstruktor von boardBase erstellen wir die Zellen mit
         # cells = [[None for _ in range(8)] for _ in range(8)]
-        # so in a seperate file i tested print(len(cells)) and got 8 (as expected)
-        # and for print(len(cells[0])) i also got 8 so i can either get them dynamically or i could just use range(8)
+        # man Könnte es dynamisch machen mit len() oder man kann einfach range(8) machen
 
 
-        #using range(8) because it's easier and faster to understand, also 8 isn't includes so it's fine
+        # range(8) nutzen weil es einfacher ist zu verstehen
         for row in range(8):
-            #againg we use range 8
             for col in range(8):
-                #i create a variable to give it the value of the piece we get with self.get_cell()
-                #we provide row and col as parameters/arguments whatever
+
+                #ich erstelle eine variable um den inhalt von der Zelle zu speichern
+                #wir geben row und col als argumente mit
                 piece = self.get_cell((row, col)) 
-                #now we just check if the returned piece is not none and use the short circuitung from python, i know about the concept from the lecture 
-                #and the name from here: https://stackoverflow.com/questions/2580136/does-python-support-short-circuiting
-                #so only if it's not none we check if the piece we got has the color as the provided one from the function argument
+
+                #jetzt überprüfen wir einfach ob das piece das wir erhalten haben nicht None ist
+                #und wegen dem AND schaut der sich die zweite bedingung nur an wenn die erste True ist
+                #und nur dann schauen wir ob das piece was wir bekommen haben die gleiche farbe hat wie der paramter in der funktion 
                 if piece is not None and piece.white == white:
+                    #wenn es so ist yielde das piece 
                     yield piece
 
         
@@ -280,16 +279,20 @@ class Board(BoardBase):
         # TODO: Implement
 
         #PLAN
-        # 1. use the iterate_cells_with_pieces() method to get every piece of the given color 
-        # 2. check if the given piece is from the class King
-        # 
-        # https://stackoverflow.com/questions/14549405/python-check-instances-of-classes 
-        # https://www.w3schools.com/python/ref_func_isinstance.asp
-
-        # ok so basically isinstance() returns true or false wether a given object is an instance of a class
+        # 1. nutze die iterate_cells_with_pieces() methode um alle teile der gegebenen farbe zu bekommen 
+        # 2. checke ob das piece von der klasse King ist
+ 
         for piece in self.iterate_cells_with_pieces(white):
+            # isinstance gibt true oder false zurück, ob die gegebene Instanze von der Klasse King ist
             if isinstance(piece, King):
+                #dann returne das Piece
                 return piece
+            
+        #und falls er kein König findet gibt er None zurück
+        #ja wir wissen das wenn eine Funktion nichts Returned, None als Rückgabewert hat
+        #aber ums besser zu verstehen
+        return None
+
 
     def is_king_check(self, white):
         """
@@ -303,25 +306,25 @@ class Board(BoardBase):
         """
         # TODO: Implement
 
-        #we give the variable called "king" the value of the king piece of the given color
-        king = self.find_king(white)
+        # Finds the king of a given color (white=True or False)
+        position_king = self.find_king(white)
 
-        #we unpack the tuple of the king position (because otherwise we get a ValueError 
-        #and the fix https://stackoverflow.com/questions/59222146/how-to-compare-equality-of-two-tuples-that-involve-with-list) is overkill for right now
-        king_row, king_col = king.cell
+        # Unpack the tuple of the kings cell
+        king_row, king_col = position_king.cell
 
-        #we iterate over every piece with the opposing color
+        # Iterates over the board and returns every piece of the opposing color
         for piece in self.iterate_cells_with_pieces(not white):
+            # Iterates over every reachable cell of the piece
+            for reachable_cell in piece.get_reachable_cells():
+                # Unpacks the pieces position (cell)
+                piece_row, piece_col = reachable_cell
+                # Checks if the opposing piece can hit the king
+                if piece_row == king_row and piece_col == king_col:
+                    # If so return False, because it shouldn't be possible
+                    return True 
+        # If the king isn't in check, return False
+        return False
             
-            #now we take the current piece and get all possible moves of that piece as a list
-            #we iterate over every possible move that piece can make
-            for position in piece.get_reachable_cells():
-                #we unpack the tuple of position for the same reason as before
-                enemy_row, enemy_col = position
-
-                #now we check if the king's row and col is the same as the enemy's row and columns
-                if king_row == enemy_row and king_col == enemy_col:
-                    return True
 
 
     def evaluate(self):
@@ -335,15 +338,19 @@ class Board(BoardBase):
         Then use the iterate_cells_with_pieces Method to find all BLACK pieces, call their respective "evaluate" Method and substract that from the score.
         """
         # TODO: Implement
-
+        
+        # Starting Score
         score = 0.0
 
+        # Iterates over the board and returns every white piece
         for piece in self.iterate_cells_with_pieces(True):
+            # Adds the value for every white piece
             score += piece.evaluate()
-
-        for piece in self.iterate_cells_with_pieces(False):
-            score -= piece.evaluate()
         
+        for piece in self.iterate_cells_with_pieces(False):
+            # Subtracts the value for every black piece
+            score -= piece.evaluate()
+
         return score
 
     def is_valid_cell(self, cell):
@@ -357,22 +364,28 @@ class Board(BoardBase):
         Don´t forget to handle the special case of "cell" being None. Return False in that case
         """
         # TODO: Implement
-        #I WON'T USE AI BUT DOCS AND STACKOVERFLOW
-        #Because of that the code COULD be deemed as too good 
 
         #https://stackoverflow.com/questions/9494404/use-of-true-false-and-none-as-return-values-in-python-functions
+        
+        #Wenn die Zelle None ist, gebe False zurück 
+        #sobald man in einer funktion return aufruft beendet es die funktion 
         if cell is None:
             return False
         
-        #else isn't needed, because a function ends itself as soon as a return is called.(figured that out by looking at "get_cell()")
-        #https://www.w3schools.com/python/python_tuples_unpack.asp
-        (row, col) = cell 
+        #wir unpacken cell in row und col
+        row, col = cell 
 
+        
         #https://stackoverflow.com/questions/13628791/determine-whether-integer-is-between-two-other-integers
+        #Wenn 0 kleiner oder gleich row ist UND row kleiner oder gleich 7
+        #UND 0 kleiner oder gleich col UND col kleiner oder gleich 7 ist gebe True zurück
+
+        #Es ist lesbarer deshalb so gemacht
         if 0 <= row <= 7 and 0 <= col <= 7:
             return True
         
-        #Again, we don't need an else, because if row and col would be valid the function would've ended at before
+        #Wenn die Bedinung oben nicht ausgelöst wurde sind wir jetzt hier
+        #das heißt in jedem anderen Fall geben wir False zurück
         return False
 
 
@@ -386,26 +399,22 @@ class Board(BoardBase):
         """
         # TODO: Implement
 
-        #1. we need the "self" keyword because we use a function from the same class.
-        #2. "is_valid_cell()" returns a boolean, that's why we can just use it as a condition  
         #"get_cell()" returns the element of the given coordinates
         #In the Constructor of the Class BoardBase every cell is initialized with the Value None, so an "Empty" cell has the Value None
         #That's why we check if it is "None"
 
-        
+        #wir brauchen self. weil wir so auf die funktionen von der gleichen klasse zugreifen können
+        #wir nutzen hier auch das logische AND, also checkt er bedingung 1 und wenn das False ist
+        #bricht er direkt ab weil die gesamt bedingung garnicht mehr wahr werden kann
+
+        # Wenn die Cell eine Valide cell ist UND die cell None ist 
+        #(was in diesem schachbrett bedeutet das keine Figur drauf ist) 
+        #dann gebe true zurück
         if self.is_valid_cell(cell) and self.get_cell(cell) is None:
             return True
             
+        #in jedem anderen fall gebe False zurück
         return False
-
-        # Version 1
-        # if self.is_valid_cell(cell) :
-        #     if self.get_cell(cell) is None:
-        #         return True
-        #
-        # But i know if i see 2 immiediatly following if's you can use an "and"
-        #https://stackoverflow.com/questions/62460725/nested-if-statements-or-and
-
 
     def piece_can_enter_cell(self, piece, cell):
         """
@@ -426,13 +435,19 @@ class Board(BoardBase):
         """
         # TODO: Implement
 
-        #Literally the same as beginning of cell_is_valid_and_empty DRY!!!
-        #We Specifically DON'T JUST RETURN THE FUNCTION, BECAUSE WE NEED TO CHECK FOR ANOTHER POSSIBLE STATE
-        if self.cell_is_valid_and_empty(cell):
-            return True
-        
-        #The Cell we wanna go for is valid and the color of the piece we use is different from the one on the cell
-        return self.is_valid_cell(cell) and self.get_cell(cell).white != piece.white 
+        #Wenn die Cell valide ist 
+        if self.is_valid_cell(cell):
+                
+            #und wenn die cell none ist (also es ist leer)
+            #oder die zelle wo wir hinwollen hat eine andere farbe 
+            #als die farbe von dem piece das wir mitgeben
+            if self.get_cell(cell) is None or self.get_cell(cell).is_white() != piece.is_white():
+                #dann gebe wahr zurück
+                return True
+            
+        #in jedem anderen fall gebe false zurück
+        return False
+
 
     def piece_can_hit_on_cell(self, piece, cell):
         """
@@ -452,17 +467,18 @@ class Board(BoardBase):
         the given piece "white" attribute.
         """
         # TODO: Implement
-
-        #Literally the same as beginning of cell_is_valid_and_empty DRY!!!
-        #We Specifically DON'T JUST RETURN THE FUNCTION, BECAUSE WE NEED TO CHECK FOR ANOTHER POSSIBLE STATE
-        if self.cell_is_valid_and_empty(cell):
-            return False
         
-        #if self.is_valid_cell(cell) and self.get_cell(cell) is None:
-        #     return False
-        
-        #Again, we instantly return the Comparison of 2 attributes that are Booleans
-        #so if the given piece has the same color as the piece on the cell it will be False != False or True != True which simplifies to False and Returns it
-        #and if it's another color it will be True != False or False != True which simplifies to True
-        
-        return self.is_valid_cell(cell) and self.get_cell(cell).white != piece.white
+        #wenn die cell valide ist
+        if self.is_valid_cell(cell):
+            #und die cell None (also leer)
+            if self.get_cell(cell) is None:
+                #gebe false zurück
+                return False
+            
+            #oder wenn die cell eine andere farbe hat als das piece das wir haben
+            if self.get_cell(cell).is_white() != piece.is_white():
+                #dann gebe true zurück
+                return True
+            
+        #in allen anderen fällen gebe false zurück
+        return False

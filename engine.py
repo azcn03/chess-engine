@@ -99,7 +99,7 @@ def evaluate_all_possible_moves(board, minMaxArg, maximumNumberOfMoves = 10):
     #We create a list to store, possible scores with the piece that achieved that score and the cell it has to move to (We use instances of the type Move, the class we are currently working in)
     possible_scores = []
 
-    #iterate over all cells with the booleadn minMaxArg (same logic as before, if it's True = white, if it's False = black)
+    #iterate over all cells with the boolean minMaxArg (same logic as before, if it's True = white, if it's False = black)
     #and everytime you find a piece with the provided color
     for piece_we_move in board.iterate_cells_with_pieces(minMaxArg.playAsWhite):
         #you get all the moves that specific piece can make and store it in the list "all_possible_moves"
@@ -204,49 +204,45 @@ def minMax(board, minMaxArg):
     :rtype: :py:class:`Move`
     """
     # TODO: Implement the Mini-Max algorithm
-
-    #1. we get the 10 best moves we can do, with the current board configuration
-    top_moves_of_current_color = evaluate_all_possible_moves(board, minMaxArg)
-
-    #2. if there are no moves we can do (we lost), give the other color a big score 
-    if not top_moves_of_current_color:
-        #i use none and cell 0,0 because it doesn't matter what type of piece it is, the score is 100 000 in the favor of the winner
-        return Move(piece= None, cell=(0,0), score=-100000) if minMaxArg.playAsWhite else Move(piece= None, cell=(0,0), score=100000)
     
-    #3. we check if we have reached the deepest level (1) of the min max algorithm (if not proceed)
-    if minMaxArg.depth > 1:
-        #we go through the top 10 moves with the according pieces one by one
-        for top_move in top_moves_of_current_color:
-            #get the piece that moves in that top_move we go through right now
-            piece = top_move.piece
-            #get the cell that piece want's to go to 
-            cell_we_wanna_go_to = top_move.cell
+    # Generate a (sorted) list of moves
+    evaluated_moves = evaluate_all_possible_moves(board, minMaxArg)
 
-            #save the current cell the piece is on
-            current_cell_of_piece = piece.cell
-            #save the piece we will go to for board recovery(none if cell is empty)
-            removed_piece = board.get_cell(cell_we_wanna_go_to)
+    # If no legal moves -> current player has lost
+    # White has no moves -> white score very low -> lost
+    # Black has no moves -> white score very high -> has won
+    
+    if len(evaluated_moves) == 0:
+        score = -1e10 if minMaxArg.playAsWhite else 1e10
+        return Move(None, None, score)
 
-            #we move the piece to the position we wanna go to
-            board.set_cell(cell_we_wanna_go_to, piece)
+    # No additional moves will considered, best move will be returned
+    if minMaxArg.depth <= 1:
+        return evaluated_moves[0]
 
-            #we get back the best move the enemy would do
-            enemys_best_possible_move = minMax_cached(board, minMaxArg=minMaxArg.next)
+    # simulation of every move
+    for move in evaluated_moves:
+        orig_cell = move.piece.cell
+        new_cell = move.cell
+        taken_piece = board.get_cell(new_cell)
 
-            #we overwrite the current score we thought we will get, with the score we will get if the enemy plays his best game
-            top_move.score = enemys_best_possible_move.score
-            
-            #again first move our piece back, than place the old piece back on it's position
-            board.set_cell(current_cell_of_piece, piece)
-            board.set_cell(cell_we_wanna_go_to, removed_piece)
+        # move
+        board.set_cell(new_cell, move.piece)
+        board.set_cell(orig_cell, None)
 
-    #https://stackoverflow.com/questions/403421/how-do-i-sort-a-list-of-objects-based-on-an-attribute-of-the-objects
-    #for every move we changed the score to the real score we would get, now we sort againg like in the function before
-    sorted_list = sorted(top_moves_of_current_color, reverse = minMaxArg.playAsWhite, key = lambda x : x.score)
+        # Recursion
+        move.score = minMax_cached(board, minMaxArg.next()).score # next() to decrease the depth and switch the player
 
-    #and finally return the best move
-    return sorted_list[0]
+        # undo move
+        board.set_cell(orig_cell, move.piece)
+        board.set_cell(new_cell, taken_piece)
 
+    # Sort the list again 
+    evaluated_moves.sort(key=lambda m: m.score, reverse=minMaxArg.playAsWhite)
+
+    # Return best move (random of the top 3 moves)
+    top = min(3, len(evaluated_moves)) # take max 3, but never more than there is
+    return random.choice(evaluated_moves[:top])
 
 def suggest_random_move(board):
     """

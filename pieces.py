@@ -61,143 +61,41 @@ class Piece:
         :return: Return numerical score between -infinity and +infinity. Greater values indicate better evaluation result (more favorable).
         """
         # TODO: Implement
+                       
+        score = 0.0
+        #Dictionary mit entsprechenden werten für die Figuren
+        existance_score = {
+            King: 99999,
+            Pawn: 1,
+            Knight: 3,
+            Bishop: 3,
+            Rook: 5,
+            Queen: 9
+        }
         
-        #SOURCES:
-        # https://www.chessprogramming.org/Point_Value
-        # https://www.chessprogramming.org/Evaluation_of_Pieces
-        # https://www.chessprogramming.org/Point_Value#Basic_values, Larry Kaufmann 2012
-        # https://www.chessprogramming.org/Piece-Square_Tables for position
-        # https://www.chessprogramming.org/Material
-        # https://www.chessprogramming.org/Simplified_Evaluation_Function
-
-
-        #PLAN
-
-        #Get the Material worth from: 
-        # 1. Get The existence of the piece, the instance of it and add points (would recommend larger numbers for finer evaluation
-        # 2. Get the position of it, 
-        # 3. evaluate further with more methods from chessprograming.com
-
-        #Implement the following:
-        #Bonus for the bishop pair (bishops complement each other, controlling squares of different color)
-        # Penalty for the rook pair (Larry Kaufman called it "principle of redundancy")
-        # Penalty for the knight pair (as two knights are less successful against the rook than any other pair of minor pieces)
-        # decreasing the value of the rook pawns and increasing the value of the central pawns (though this can be done in the piece-square tables as well)
-        # Trade down bonus that encourages the winning side to trade pieces but no pawns [3]
-        # Penalty for having no pawns, as it makes it more difficult to win the endgame
-        # Bad trade penalty as proposed by Robert Hyatt, that is penalizing the material imbalances that are disadvantageous like having three pawns for a piece or a rook for two minors.
-        # Elephantiasis effect as suggested by Harm Geert Muller (meaning that stronger pieces lose part of their value in presence of weaker pieces)
-        #I think Multiple if statements would be the best, because i have to implement a lot of different rules for every single one of them
+        #addiere auf den score den value von
+        #type(self) schaut welcher type das piece hat, bei einem König wäre es King
+        #das wird zu seinem Key und der Value ist dann 99999
+        score += existance_score[type(self)]
         
-
-        # TODO 
-        # Adjust the positional values accordingly to white and black
-        pawn_pos = [
-        [0,  0,  0,  0,  0,  0,  0,  0],
-        [50, 50, 50, 50, 50, 50, 50, 50],
-        [10, 10, 20, 30, 30, 20, 10, 10],
-        [5,  5, 10, 25, 25, 10,  5,  5],
-        [0,  0,  0, 20, 20,  0,  0,  0],
-        [5, -5,-10,  0,  0,-10, -5,  5],
-        [5, 10, 10,-20,-20, 10, 10,  5],
-        [0,  0,  0,  0,  0,  0,  0,  0]]
-
-        rook_pos = [
-        [0,  0,  0,  0,  0,  0,  0,  0],
-        [5, 10, 10, 10, 10, 10, 10,  5],
-        [-5,  0,  0,  0,  0,  0,  0, -5],
-        [-5,  0,  0,  0,  0,  0,  0, -5],
-        [-5,  0,  0,  0,  0,  0,  0, -5],
-        [-5,  0,  0,  0,  0,  0,  0, -5],
-        [-5,  0,  0,  0,  0,  0,  0, -5],
-        [0,  0,  0,  5,  5,  0,  0,  0]]
-
-        knight_pos = [
-        [-50,-40,-30,-30,-30,-30,-40,-50],
-        [-40,-20,  0,  0,  0,  0,-20,-40],
-        [-30,  0, 10, 15, 15, 10,  0,-30],
-        [-30,  5, 15, 20, 20, 15,  5,-30],
-        [-30,  0, 15, 20, 20, 15,  0,-30],
-        [-30,  5, 10, 15, 15, 10,  5,-30],
-        [-40,-20,  0,  5,  5,  0,-20,-40],
-        [-50,-40,-30,-30,-30,-30,-40,-50]]
-
-        bishop_pos = [
-        [-20,-10,-10,-10,-10,-10,-10,-20],
-        [-10,  0,  0,  0,  0,  0,  0,-10],
-        [-10,  0,  5, 10, 10,  5,  0,-10],
-        [-10,  5,  5, 10, 10,  5,  5,-10],
-        [-10,  0, 10, 10, 10, 10,  0,-10],
-        [-10, 10, 10, 10, 10, 10, 10,-10],
-        [-10,  5,  0,  0,  0,  0,  5,-10],
-        [-20,-10,-10,-10,-10,-10,-10,-20]]
-
-        queen_pos = [
-        [-20,-10,-10, -5, -5,-10,-10,-20],
-        [-10,  0,  0,  0,  0,  0,  0,-10],
-        [-10,  0,  5,  5,  5,  5,  0,-10],
-        [-5,  0,  5,  5,  5,  5,  0, -5],
-        [0,  0,  5,  5,  5,  5,  0, -5],
-        [-10,  5,  5,  5,  5,  5,  0,-10],
-        [-10,  0,  5,  0,  0,  0,  0,-10],
-        [-20,-10,-10, -5, -5,-10,-10,-20]]
-
-        king_pos_middle_game = [
-        [-30,-40,-40,-50,-50,-40,-40,-30],
-        [-30,-40,-40,-50,-50,-40,-40,-30],
-        [-30,-40,-40,-50,-50,-40,-40,-30],
-        [-30,-40,-40,-50,-50,-40,-40,-30],
-        [-20,-30,-30,-40,-40,-30,-30,-20],
-        [-10,-20,-20,-20,-20,-20,-20,-10],
-        [20, 20,  0,  0,  0,  0, 20, 20],
-        [20, 30, 10,  0,  0, 10, 30, 20]]
-
-        king_pos_end_game = [
-        [-50,-40,-30,-20,-20,-30,-40,-50],
-        [-30,-20,-10,  0,  0,-10,-20,-30],
-        [-30,-10, 20, 30, 30, 20,-10,-30],
-        [-30,-10, 30, 40, 40, 30,-10,-30],
-        [-30,-10, 30, 40, 40, 30,-10,-30],
-        [-30,-10, 20, 30, 30, 20,-10,-30],
-        [-30,-30,  0,  0,  0,  0,-30,-30],
-        [-50,-30,-30,-30,-30,-30,-30,-50]]
-
-        
-
-        if isinstance(self, Pawn):
-            self_value = 100
-            row , col = self.cell
-            cell_value = pawn_pos[row][col]
-
-        elif isinstance(self, Rook):
-            self_value = 525
-            row , col = self.cell
-            cell_value = rook_pos[row][col]
-
-        elif isinstance(self, Knight):
-            self_value = 350
-            row , col = self.cell
-            cell_value = knight_pos[row][col]
-    
-        elif isinstance(self, Bishop):
-            self_value = 350
-            row , col = self.cell
-            cell_value = bishop_pos[row][col]
-
-        elif isinstance(self, Queen):
-            self_value = 1000
-            row , col = self.cell
-            cell_value = queen_pos[row][col]
-
-        elif isinstance(self, King):
-            self_value = 20000#got the value of 20000 from:
-            row , col = self.cell
-            cell_value = king_pos_middle_game[row][col]
-
-        return self_value 
-
+        #Zentrum gibt zusatzpunkte
+        middle = [3, 4]
+        #für alle move die man durch get_valid_cells() zurück bekommt
+        for move in self.get_valid_cells():
+            #für jedes mal wenn man ein anderes piece schlagen kann füge 0.25 hinzu
+            if self.can_hit_on_cell(move): # Checks wheter this piece can hit other pieces
+                score += 0.25
             
+            #und ob man das zentrum angreifen kann
+            #wenn das tupel move in index 0 und 1 die mitte hat (also 3 und 4)
+            if move[0] in middle and move[1] in middle: # Checks if piece controls the middle part 
+                #füge 0.4 hinzu
+                score += 0.4
 
+            #und füge 0.25 für jeden move den man überhaupt machen kann hinzu
+            score += 0.25
+        
+        return score
 
     def get_valid_cells(self):
         """
@@ -223,49 +121,37 @@ class Piece:
         """
         # TODO: Implement
 
-        #GOAL:
-        #IF i understood correctly
-        # 1. We have to take all the possible positions a pice can do within the next move
-        # 2. place that piece on every one of those positions 
-        # 2.1. (we might could optimize and cut off branches with the same direction E.g. the rook isn't allowed to move to the right at all)
-        # 3. See if the King is checked if Piece is on that position
-        # 4. based on 3. either add it to the list or don't
-        # 5. restore board to it's original state
-        #PLAN
-        # 1. Create an empty list which we will return in the end
-        # 2. get all reachable cells
-        # 3. safe the initial position of the piece
-        # 4. before you loop over all possible positions, safe the piece which stands on the goal_cell and it's position (indirectly the goal cell)
-        # 5. loop, add or not, reset again then return
-
-
+        # Erstelle eine leere liste
         valid_cells = []
 
-        #We get all reachable cells as a list
+        # hol dir alle zellen wo ein piece hingehen kann
         reachable_cells = self.get_reachable_cells()
 
-        #We safe the initial position of the piece we wanna move
-        initial_position = self.cell
-
-        #possible_position will be a tuple, we iterate over a list with tuples
-        for possible_position in reachable_cells:
-
-            #safe the piece that is on the cell we wanna go to
-            local_piece = self.board.get_cell(possible_position)
-            #set OUR piece on that cell
-            self.board.set_cell(possible_position, self)
-
-            #check if king is in check, but we inverese it
-            #so only if king is NOT in check we append that position to the list
+        # speichere die initial position von dem piece um das board später wiederherzustellen
+        initial_position = self.cell 
+        
+        # gehe durch jeden möglichen move
+        for potential_move in reachable_cells:
+            #speichere die figure auf der cell wo wir hinwollen,
+            #um es später wieder dahin zu machen 
+            target_cell_content = self.board.get_cell(potential_move)
+            # setzt das piece auf den potenziellen move um zu schauen 
+            # ob der eigene König im schach liegt
+            self.board.set_cell(potential_move, self)
+            
+            # Wenn der eigene König nicht im Schach liegt
+            # dann ist der move valide
             if not self.board.is_king_check_cached(self.white):
-                valid_cells.append(possible_position)
+                # füge den move der liste hinzu
+                valid_cells.append(potential_move)
 
-            #After the if, which will ALWAYS happen, we FIRST set out piece back to it's original place
+            # das brett wieder in sein ursprungszustand versetzen
             self.board.set_cell(initial_position, self)
-            #THEN SECOND we place the old piece on the position we checked
-            self.board.set_cell(possible_position, local_piece)
-
+            self.board.set_cell(potential_move, target_cell_content)
+        
+        # returned alle moves wo der eigene könig nicht im schach ist 1
         return valid_cells
+
                    
 
 class Pawn(Piece):  # Bauer
@@ -294,92 +180,75 @@ class Pawn(Piece):  # Bauer
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
 
-        #The indices of the Board are [0-7] [0-7] if it's White the pawn's Home row will be [1] and for black [6]
-        #so the only direction which is allowed is into the respective other direction of it's own color (black is -1 , white is +1) of the first index (in that case row)
+        #Die Index auf dem Board sind [0-7] und [0-7]
+        #Wenn Die Figur Weiß ist, ist die "Home Row" [1] und bei Schwarz [6] (board.py, Klasse BoardBase, Methode Reset, ca Zeile 180)
+        
+        #Und beim Bauern ist die Einzige erlaubte Richtung, vorwärts
+        #Für Weiß also +1 und schwarz -1
 
+        # [
+        # [_,_,_,_,_,_,_,_]
+        # [w,w,w,w,w,w,w,w] nach unten 
+        # [_,_,_,_,_,_,_,_]
+        # [_,_,_,_,_,_,_,_]
+        # [_,_,_,_,_,_,_,_]
+        # [_,_,_,_,_,_,_,_]
+        # [b,b,b,b,b,b,b,b] nach oben
+        # [_,_,_,_,_,_,_,_]
+        # ]
+        
+
+        #wir erstellen eine leere liste wo wir gleich die felder hinzufügen werden
         reachable_cells = []
 
-        #By implementing a set direction we don't need to repeat ourselves for black and white, would generally recommend to differentiate at start
-        #https://stackoverflow.com/questions/14461905/python-if-else-short-hand
-        #this was combined with tuple unpacking 
-        #https://www.w3schools.com/python/python_tuples_unpack.asp
-        #"direction" and "home_row" are (1, 1) if it's white, else (the only other case is black) it's (-1, 6) 
+        if self.is_white():
+            direction = 1
+            home_row = 1
+        else:#also wenns schwarz ist 
+            direction = -1  
+            home_row = 6
 
-        direction, home_row = (1, 1) if self.white else (-1, 6)
 
-        (row, col) = self.cell
+        #wir nehmen den SPEZIFISCHEN bauern mit Self und schauen uns seine Position an mit .cell
+        #und speichern diese position in row und col (DIE WIR NICHT VERÄNDERN IN ZUKUNFT, WICHTIG!!!)
+        row, col = self.cell
 
+
+        #ein schritt ist nach vorne ist, die reihe zu nehmen wo der ist und seine richtung addieren
+        #die spalte bleibt weil er ja nur nach vorne geht 
         one_step = (row + direction, col)
-        #row + direction because 5 + 1 = 6 and 5 + (-1) is 4 so it's fine
+
+        #wenn die neue zelle wo wir hinwollen leer und gültig ist
         if self.board.cell_is_valid_and_empty(one_step):
+            #füge diese zelle zur liste reachable_cells hinzu
             reachable_cells.append(one_step)
 
-            #Now we Check if Dash(2 cells at once) is even possible
-            #The cell right infront is free because we checked it earlier, now we check if the second cell is also free and if the pawn is in his homerow 
+            #da wir ein schritt nach vorne bereits gecheckt haben 
+            #und wir immernoch in diesem if block sind
+
+            #machen wir einmal einen doppelschritt
+            #also einfach die richtung was vorne ist für den Bauern mal 2, col bleibt gleich
             two_steps = (row + direction * 2, col)
+            
+            #wenn die row von dem bauen seine Home Row ist und die zelle in 2 schritten frei und gültig ist
             if row == home_row and self.board.cell_is_valid_and_empty(two_steps):
+                #füge diese zelle "two_steps" der liste hinzu
                 reachable_cells.append(two_steps)
 
+        #jetzt erstellen wir eine liste mit 1 und -1 (für rechts und links)
         for value in [1, -1]:
+            #der angriff ist, eins nach vorne und nach + value (also beim ersten durchlauf +1 beim zweiten -1)
             attack = (row + direction, col + value)
-            #You need self as the first argument because that's the piece you want to move
+
+            #wenn unser piece das wir gerade bewegen (deshalb auch self als erstes argument)
+            #auf der zelle attack angreifen kann
             if self.board.piece_can_hit_on_cell(self, attack):
+                #dann füge die zelle attack der liste hinzu
                 reachable_cells.append(attack)
 
+        #jetzt zum schluss gebe die liste zurück
         return reachable_cells
 
-
-# We can also do it like that but we would unnecessarily repeat our selves (and for other pieces with more possibilities we can't copy paste the code 10 or more times)
-            #  #Now we SEPERATELY check if pawn can attack his diagonal fields
-            # #The multiple if's are on purpose!!!
-            # if self.board.piece_can_hit_on_cell(self, (row + direction, col -1)):
-            #     reachable_cells.append((row + direction, col -1))
-            # if self.board.piece_can_hit_on_cell(self, (row + direction, col +1)):
-            #     reachable_cells.append((row + direction, col +1))
-        
-
-        # A bit easier to understand implementation of the same code
-        # reachable_cells = []
-
-        # #To know where the pawn will be able to move we first need it's current position
-        # (row, col) = self.cell
-        
-
-        # #1. Check Color, because self.white is a Boolean we can use it as a condition and if's not True it will be False so we just need an else
-        # if self.white:
-        #     #2. Now we check if the cell right infront of the Pawn is free and if so we append that cell as a possible one
-        #     if self.board.cell_is_valid_and_empty((row - 1, col)):
-        #         reachable_cells.append((row - 1, col))
-
-        #         #Now we Check if Dash(2 cells at once) is even possible
-        #         #The cell right infront is free because we checked it earlier, now we check if the second cell is also free and if the pawn is in his homerow 
-        #         if row == 6 and self.board.cell_is_valid_and_empty((row - 2, col)):
-        #             reachable_cells.append((row - 2, col))
-
-        #     #If white we SEPERATELY check if can attack his diagonal fields
-        #     #The multiple if's are on purpose
-        #     if self.board.piece_can_hit_on_cell(self, (row - 1, col -1)):
-        #         reachable_cells.append((row - 1, col -1))
-        #     if self.board.piece_can_hit_on_cell(self, (row - 1, col +1)):
-        #         reachable_cells.append((row - 1, col +1))
-        
-        # #Same as for White one but instead of Homerow 6 it's 1 and his "Forward" is + 1 while white's was -1
-        # else:
-        #     #See if Cell infront is free and add to list
-        #     if self.board.cell_is_valid_and_empty((row + 1, col)):
-        #         reachable_cells.append((row + 1, col))
-                
-        #         #Check if it's the Homerow, if so and Free -> add to list
-        #         if row == 1 and self.board.cell_is_valid_and_empty((row + 2, col)):
-        #             reachable_cells.append((row + 2, col))
-
-        #     # Again Check Seperately if pawn can hit diagonally
-        #     if self.board.piece_can_hit_on_cell(self, (row + 1, col -1)):
-        #         reachable_cells.append((row + 1, col -1))
-        #     if self.board.piece_can_hit_on_cell(self, (row + 1, col +1)):
-        #         reachable_cells.append((row + 1, col +1))
-
-        # return reachable_cells
 
 class Rook(Piece):  # Turm
     def __init__(self, board, white):
@@ -404,93 +273,58 @@ class Rook(Piece):  # Turm
         # TODO: Implement a method that returns all cells this piece can enter in its next move
 
         #PLAN:
-        #1. Rook can move horizontally and vertically so 4 directions
-        #2. I will implement this with a list of those 4 directions E.g. (1, 0)
-        #3. 
-        #3. Now go one step in the given direction and check for
-        #       -if cell is empty and valid then repeat and add one step
-        #       -if the cell isn't empty check if it's an opponent then add that step and stop that direction because you can't go through an opponent 
+        #1. Der Rook kann sich nur Horizontal und Vertikal bewegen 
+        #2. mit einer liste aus 4 tupeln (1,0) usw kann man das implementieren
+        #3. und dann mit dem tupel in die richtung gehen und überprüfen
+        #   - wenn die zelle leer und valide ist, wiederhole noch ein schritt
+        #   - wenn die zelle nicht leer ist, überprüfe ob es ein gegner ist
+        #       -wenn ja, füge die zelle noch hinzu
+        #       -wenn nein, dann fügen wir es NICHT hinzu 
 
-
-        #Implementation 
-
+        #leere liste erstellen
         reachable_cells = []
 
-        (row, col) = self.cell
+        #wir nehmen den SPEZIFISCHEN Turm mit Self und schauen uns seine Position an mit .cell
+        #und speichern diese position in row und col (DIE WIR NICHT VERÄNDERN IN DER ZUKUNFT, 
+        # WICHTIG!!! NICHT VERGESSEN IN DER PRÜFUNG)
+        row, col = self.cell
 
-        # Here is the list of his Directions 
+        #die liste seiner richtunge erstellen
+        #wir verändern immernur einen index, weil nur horizontal oder nur vertikal
         direction = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
-        #Unpack the tuple's from the list in j and k
+
+        #wir unpacken das tupel mit j und k 
+        #zb das erste tupel ist (1,0) also j wird 1 und k wird 0
         for j, k in direction:
-            #add the current position they are in to the possible direction once
-            new_cell = (row + j, col + k) #3 and 3 then it will become 4 and 3 for E.g. with the first tuple from the list (1, 0)
+
+            #wir fügen die richtung zu der position wo der turm gerade ist hinzu 
+            #und speichern diese neue zelle als new_cell
+            new_cell = (row + j, col + k) 
             
-            #while it's empty move forward
+            #während die new_cell valide und leer ist
             while self.board.cell_is_valid_and_empty(new_cell):
+                #füge die new_cell der liste hinzu
                 reachable_cells.append(new_cell)
-                #unpack tuple so we know where on the board we are
-                (new_row, new_col) = new_cell
-                #add the direction we are going toward again E.g. (1, 1) and save in new cell
+
+                #jetzt unpacken wir die neue position
+                #und fügen wir die richtung hinzu damit der noch ein schritt geht
+                new_row, new_col = new_cell
                 new_cell = (new_row + j, new_col + k)
-            
-            #if we are here the next cell wasn't empty, so we check if it's an opponent
-            #if so add that cell once to the list, then return to the start of the for loop and do all that again with E.g.(1, -1)
-            if self.board.is_valid_cell(new_cell) and self.board.piece_can_hit_on_cell(self, new_cell):
+
+            #Das wird dann solange wiederholt bis die new_cell nicht mehr leer oder valide ist
+            #aber wir checken nochmal ob es sich um einen gegner bei der nächsten zelle handelt
+             
+            #wenn die neue zelle einen gegner hat 
+            # (als argument geben wir erstmal den turm mit den wir bewegen wollen 
+            # und die zelle wo wir hinwollen)
+            if self.board.piece_can_hit_on_cell(self, new_cell):
+                #dann füge das noch der liste hinzu
                 reachable_cells.append(new_cell)
 
+
+        #zum schluss geben wir die liste zurück
         return reachable_cells
-
-
-        #More beginner way
-        # #The indices of the Board are [0-7] [0-7], 
-        # #the Rook's are allowed to move in every axis (+1/-1) multiple times as long as cell is valid and empty
-        # #if own color there then stop one cell before that
-        # #if oponent color there include that cell (sounds a bit like list slicing, might try it with that)
-
-        # #Need to optimize code, DRY concept and readability, this basically just a mockup
-        # reachable_cells = []
-
-        # directions = [1, -1] 
-
-        # (row, col) = self.cell
-        
-        # for direction in directions:
-        #     steps = 1
-        #     #for positive direction
-        #     if direction > 0:
-        #         #take current position and add 1 in row see if its possible
-        #         while self.board.cell_is_valid_and_empty((row + steps, col)):
-        #             reachable_cells.append((row + steps, col))
-        #             steps += 1
-        #         if(self.board.piece_can_hit_on_cell(self, (row + steps, col))):
-        #             reachable_cells.append((row + steps, col))
-
-        #     else:
-        #         steps *= -1
-        #         while self.board.cell_is_valid_and_empty((row + steps, col)):
-        #             reachable_cells.append((row + steps, col))
-        #             steps -= 1
-        #         if(self.board.piece_can_hit_on_cell(self, (row + steps, col))):
-        #             reachable_cells.append((row + steps, col))
-
-        # for direction in directions:
-        #     steps = 1
-        #     if direction > 0:
-        #         while self.board.cell_is_valid_and_empty((row, steps + col)):
-        #             reachable_cells.append((row, steps + col))
-        #             steps += 1
-        #         if(self.board.piece_can_hit_on_cell(self, (row, steps + col))):
-        #             reachable_cells.append((row, steps + col))
-        #     else:
-        #         steps *= -1
-        #         while self.board.cell_is_valid_and_empty((row, steps + col)):
-        #             reachable_cells.append((row, steps + col))
-        #             steps -= 1
-        #         if(self.board.piece_can_hit_on_cell(self, (row, steps + col))):
-        #             reachable_cells.append((row, steps + col))
-
-        # return reachable_cells
 
 
 class Knight(Piece):  # Springer
@@ -515,25 +349,36 @@ class Knight(Piece):  # Springer
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
 
-        # PLAN:
-        #1. Knight only has 8 possible moves, i will create a list of those 8 moves
-        #2. Go trough every move and see if either the cell they wanna go to is empty OR an opposing piece is there (that the cells are valid is already assumed)
-        #3. Return the list of those moves
+        #Der Springer hat nur 8 mögliche bewegungen 
+        #gehe durch alle 8 moves und guck ob das feld leer ist oder ein gegner auf dem feld steht
 
+        #leere liste erstellen
         reachable_cells = []
-        (row, col) = self.cell
         
-        #Because the Knight moves in 2 in one directions 1 in the other those are the 8 possibilities
+
+        #wir nehmen den SPEZIFISCHEN Turm mit Self und schauen uns seine Position an mit .cell
+        #und speichern diese position in row und col (DIE WIR NICHT VERÄNDERN IN DER ZUKUNFT, 
+        # WICHTIG!!! NICHT VERGESSEN IN DER PRÜFUNG)
+        row, col = self.cell
+        
+        #weil der springer sich wie ein L bewegt sind das seine 8 möglichen züge
         possible_moves = [(2, 1), (2, -1), (1, 2), (-1, 2), (-2, 1), (-2, -1), (1,-2), (-1,-2)]
 
-        for j, k in possible_moves:
-            #We save the new Position in "new_cell"
-            new_cell = (row + j, col + k)
-            #We use the method "piece_can_enter_cell", because it perfectly catches the case of
-            #Either the new Cell has to be empty or an opposing piece has to be there
+
+        #wir unpacken das tupel mit y und x (für die jeweiligen achsen wie beim koordinaten system) 
+        for y, x in possible_moves:
+            #wir speichern die neue position in "new_cell"
+            new_cell = row + y, col + x
+            
+            #wir nutzen die funktion "piece_can_enter_cell" weil es perfekt passt
+            
+            #wenn ist die neue zelle leer oder da ist ein gegner drauf
+            #(wir geben als argument den springer mit, durch self, und die neue zelle wo der hinwill)
             if self.board.piece_can_enter_cell(self, new_cell):
+                #dann füge die "new_cell" der liste hinzu 
                 reachable_cells.append(new_cell)        
        
+       #gebe die liste zurück
         return reachable_cells
 
     
@@ -558,40 +403,62 @@ class Bishop(Piece):  # Läufer
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
 
-        #PLAN:
-        #1. Bishop can move diagonally in 4 directions, which is one of the moves of the list below "direction" but multiple times
-        #2. I will implement this in a list with tuples and increase both elements with one after every turn 
-        #3. Now go one step diagonally and check for
-        #       -if cell is empty and valid then repeat and add one step
-        #       -if the cell isn't empty check if it's an opponent then add that step and stop that direction because you can't go through an opponent 
 
-        #Implementation 
+        # GLEICHE LOGIK WIE DER TURM, eigentlich auch gleiche kommentare 
+
+
+        #Der Läufer läuft diagonal, also einer der 4 richtungen unten bei direction
+        #implementieren kann man das mit einer liste von tupeln wo beide richtungen angepasst werden 
+        #jetzt gehe mehrmals in eine richtung und checke
+        #       -ob die zelle leer und valide ist, wenn ja gehe noch einen schritt
+        #       -wenn die zelle nicht leer ist überprüfe ob es ein gegner ist
+        #           wenn ja füge das noch hinzu, 
+        #           wenn nein dann nicht 
+
+         
+        #erstelle eine leere liste
         reachable_cells = []
-        (row, col) = self.cell
 
-        # Here is the list of his Directions
+        #wir nehmen den SPEZIFISCHEN Läufer mit Self und schauen uns seine Position an mit .cell
+        #und speichern diese position in row und col (DIE WIR NICHT VERÄNDERN IN DER ZUKUNFT, 
+        # WICHTIG!!! NICHT VERGESSEN IN DER PRÜFUNG)
+        row, col = self.cell
+
+        # die liste mit seinen richtungen
         direction = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 
-        #Unpack the tuple's from the list in j and k
+        #wir unpacken das tupel mit j und k 
         for j, k in direction:
-            #add the current position they are in to the possible direction once
-            new_cell = (row + j, col + k) #3 and 3 then it will become 4 and 4 for E.g. with the first tuple from the list (1, 1)
+
+            #wir fügen die richtung zu der position wo der läufer im moment ist hinzu 
+            #und speichern diese neue zelle als new_cell
+            new_cell = (row + j, col + k)
             
-            #while it's empty move forward
+            #während die new_cell valide und leer ist
             while self.board.cell_is_valid_and_empty(new_cell):
+                #füge die new_cell der liste hinzu
                 reachable_cells.append(new_cell)
-                #unpack tuple so we know where on the board we are
+
+                #jetzt unpacken wir die neue position
+                #und fügen wir die richtung hinzu damit der noch ein schritt geht
                 (new_row, new_col) = new_cell
-                #add the direction we are going toward again E.g. (1, 1) and save in new cell
                 new_cell = (new_row + j, new_col + k)
             
-            #if we are here the next cell wasn't empty, so we check if it's an opponent
-            #if so add that cell once to the list, then return to the start of the for loop and do all that again with E.g.(1, -1)
+            #Das wird dann solange wiederholt bis die new_cell nicht mehr leer oder valide ist
+            #aber wir checken nochmal ob es sich um einen gegner bei der nächsten zelle handelt
+            
+            
+            #wenn die neue zelle einen gegner hat 
+            # (als argument geben wir erstmal den läufer den wir bewegen wollen 
+            # und die zelle wo wir hinwollen)
             if self.board.piece_can_hit_on_cell(self, new_cell):
+                
+                #dann füge das noch der liste hinzu
                 reachable_cells.append(new_cell)
         
+        #zum schluss geben wir die liste zurück
         return reachable_cells
-
+    
 
 class Queen(Piece):  # Königin
     def __init__(self, board, white):
@@ -615,6 +482,8 @@ class Queen(Piece):  # Königin
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
 
+
+        #Es ist der exakt gleiche code wie turm und läufer
         #PLAN:
         #1. Queen Basically is a rook and bishop at the same time, just adjust the directios
         #2. I will implement this in a list with tuples and increase both elements with one after every turn 
@@ -680,7 +549,7 @@ class King(Piece):  # König
 
         #Implementation 
         reachable_cells = []
-        (row, col) = self.cell
+        row, col = self.cell
 
         # Here is the list of his Directions
         possible_moves = [(1, 1), (1, -1), (-1, 1), (-1, -1), (1, 0), (-1, 0), (0, 1), (0, -1)]
